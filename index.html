@@ -24,7 +24,6 @@
         h1 { font-size: 2.5em; }
         p { font-size: 1.2em; }
         .weather-icon { font-size: 3em; }
-        /* Default theme */
         body.sunny { background: linear-gradient(135deg, #f5f7fa, #c3cfe2); color: #333; }
         body.cloudy { background: linear-gradient(135deg, #d3d3d3, #78909c); color: #fff; }
         body.rainy { background: linear-gradient(135deg, #4b6584, #1e272e); color: #fff; }
@@ -39,26 +38,37 @@
     </div>
 
     <script>
-        // OpenWeatherMap API key (replace with your own)
-        const apiKey = 'YOUR_API_KEY';
-        const city = 'Montreal,CA';
-        const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+        // Montreal coordinates (latitude, longitude)
+        const lat = 45.5088; // Montreal, Canada
+        const lon = -73.5878;
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&timezone=America%2FToronto`;
 
         async function fetchWeather() {
             try {
                 const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
                 const data = await response.json();
                 updateWeather(data);
             } catch (error) {
-                document.getElementById('weather-info').innerText = 'Error fetching weather data';
-                console.error(error);
+                console.error('Fetch error:', error.message);
+                // Fallback to mock data if real-time fetch fails
+                const mockData = {
+                    current: {
+                        temperature_2m: 20,
+                        weathercode: 0 // Clear sky
+                    }
+                };
+                updateWeather(mockData);
+                document.getElementById('weather-info').innerText += '\nUsing mock data due to fetch error.';
             }
         }
 
         function updateWeather(data) {
-            const temp = data.main.temp;
-            const condition = data.weather[0].main.toLowerCase();
-            const description = data.weather[0].description;
+            const temp = data.current.temperature_2m;
+            const weatherCode = data.current.weathercode;
+            const { condition, description } = getWeatherCondition(weatherCode);
             const icon = getWeatherIcon(condition);
 
             // Update text
@@ -66,37 +76,49 @@
                 `Temperature: ${temp}°C\nCondition: ${description}`;
             document.getElementById('weather-icon').innerText = icon;
 
-            // Update theme based on weather mood
+            // Update theme
             updateTheme(condition);
+        }
+
+        function getWeatherCondition(weatherCode) {
+            // Open-Meteo weather codes: https://open-meteo.com/en/docs
+            const codes = {
+                0: { condition: 'sunny', description: 'Clear sky' },
+                1: { condition: 'sunny', description: 'Mainly clear' },
+                2: { condition: 'cloudy', description: 'Partly cloudy' },
+                3: { condition: 'cloudy', description: 'Overcast' },
+                45: { condition: 'cloudy', description: 'Fog' },
+                48: { condition: 'cloudy', description: 'Depositing rime fog' },
+                51: { condition: 'rainy', description: 'Light drizzle' },
+                53: { condition: 'rainy', description: 'Moderate drizzle' },
+                55: { condition: 'rainy', description: 'Dense drizzle' },
+                61: { condition: 'rainy', description: 'Light rain' },
+                63: { condition: 'rainy', description: 'Moderate rain' },
+                65: { condition: 'rainy', description: 'Heavy rain' },
+                71: { condition: 'snowy', description: 'Light snow' },
+                73: { condition: 'snowy', description: 'Moderate snow' },
+                75: { condition: 'snowy', description: 'Heavy snow' },
+                95: { condition: 'rainy', description: 'Thunderstorm' }
+            };
+            return codes[weatherCode] || { condition: 'cloudy', description: 'Unknown' };
         }
 
         function getWeatherIcon(condition) {
             const icons = {
-                clear: '☀️',
-                clouds: '☁️',
-                rain: '🌧️',
-                snow: '❄️',
-                thunderstorm: '⛈️',
-                drizzle: '🌦️',
-                mist: '🌫️'
+                sunny: '☀️',
+                cloudy: '☁️',
+                rainy: '🌧️',
+                snowy: '❄️'
             };
             return icons[condition] || '🌍';
         }
 
         function updateTheme(condition) {
             document.body.classList.remove('sunny', 'cloudy', 'rainy', 'snowy');
-            if (condition.includes('clear')) {
-                document.body.classList.add('sunny');
-            } else if (condition.includes('cloud')) {
-                document.body.classList.add('cloudy');
-            } else if (condition.includes('rain') || condition.includes('drizzle')) {
-                document.body.classList.add('rainy');
-            } else if (condition.includes('snow')) {
-                document.body.classList.add('snowy');
-            }
+            document.body.classList.add(condition);
         }
 
-        // Fetch weather on page load
+        // Fetch real-time weather on load
         fetchWeather();
     </script>
 </body>
