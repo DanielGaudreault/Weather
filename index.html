@@ -162,19 +162,27 @@
             try {
                 const response = await fetch(apiUrl);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
+                    throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
                 }
                 const data = await response.json();
                 updateWeather(data);
-                document.getElementById('weather-info').innerHTML += `<br>Last updated: ${new Date().toLocaleTimeString()}`;
+                document.getElementById('weather-info').innerHTML += `<br>Last updated: ${new Date().toLocaleTimeString('en-US', { timeZone: 'America/Toronto' })}`;
             } catch (error) {
                 console.error('Fetch error:', error.message);
-                document.getElementById('weather-info').innerHTML = `Failed to fetch real-time weather: ${error.message}. Please check your internet connection or try again later.`;
+                let errorMessage = 'Failed to fetch real-time weather. ';
+                if (error.message.includes('Network')) {
+                    errorMessage += 'Please check your internet connection.';
+                } else if (error.message.includes('429')) {
+                    errorMessage += 'API rate limit exceeded. Please try again later.';
+                } else {
+                    errorMessage += 'Unknown error occurred. Please try again.';
+                }
+                document.getElementById('weather-info').innerHTML = errorMessage;
                 document.getElementById('weather-icon').innerText = '🌍';
-                document.getElementById('weather-advice').innerText = 'Unable to load weather data.';
+                document.getElementById('weather-advice').innerText = 'Unable to load weather data. Click "Refresh Now" to try again.';
                 document.body.classList.remove('sunny', 'partly-cloudy', 'cloudy', 'rainy', 'snowy', 'foggy', 'thunderstorm', 'windy');
-                document.body.classList.add('cloudy'); // Default theme on error
-                document.getElementById('animation-container').innerHTML = ''; // Clear animations
+                document.body.classList.add('cloudy');
+                document.getElementById('animation-container').innerHTML = '';
             }
         }
 
@@ -190,7 +198,6 @@
             const icon = getWeatherIcon(condition);
             const advice = getWeatherAdvice(condition, precipProbability);
 
-            // Update text
             document.getElementById('weather-info').innerHTML = `
                 Temperature: ${temp}°C<br>
                 Feels Like: ${feelsLike}°C<br>
@@ -203,7 +210,6 @@
             document.getElementById('weather-icon').innerText = icon;
             document.getElementById('weather-advice').innerText = advice;
 
-            // Update theme and animation
             updateThemeAndAnimation(condition);
         }
 
