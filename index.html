@@ -6,64 +6,83 @@
     <title>Montreal Weather Mood</title>
     <style>
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Roboto', Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            color: #333;
-            transition: background 0.5s ease, color 0.5s ease;
+            transition: background 0.7s ease, color 0.7s ease;
+            position: relative;
             overflow: hidden;
         }
-        .container {
-            text-align: center;
+        .weather-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
             padding: 30px;
-            border-radius: 15px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            max-width: 400px;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+        .weather-card:hover {
+            transform: translateY(-5px);
         }
         h1 {
-            font-size: 2.8em;
-            margin: 0;
+            font-size: 2.5em;
+            margin: 0 0 10px;
+            font-weight: 500;
         }
         .weather-icon {
-            font-size: 4em;
+            font-size: 5em;
             margin: 10px 0;
         }
-        p {
-            font-size: 1.2em;
-            margin: 5px 0;
+        .weather-details p {
+            font-size: 1.1em;
+            margin: 8px 0;
+            line-height: 1.5;
         }
-        /* Themes for weather moods */
+        .weather-advice {
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 15px;
+        }
+        /* Weather Themes */
         body.sunny {
-            background: linear-gradient(135deg, #ffdd55, #ff6f61);
+            background: linear-gradient(135deg, #ff9d6c, #ffd700);
             color: #333;
         }
         body.partly-cloudy {
-            background: linear-gradient(135deg, #87ceeb, #b0c4de);
+            background: linear-gradient(135deg, #87cefa, #b0e0e6);
             color: #333;
         }
         body.cloudy {
-            background: linear-gradient(135deg, #778899, #4b5e6f);
+            background: linear-gradient(135deg, #708090, #2f4f4f);
             color: #fff;
         }
         body.rainy {
-            background: linear-gradient(135deg, #4682b4, #2f4f4f);
+            background: linear-gradient(135deg, #4169e1, #191970);
             color: #fff;
         }
         body.snowy {
-            background: linear-gradient(135deg, #e0f7fa, #b0c4de);
+            background: linear-gradient(135deg, #f0f8ff, #b0c4de);
             color: #333;
         }
         body.foggy {
-            background: linear-gradient(135deg, #d3d3d3, #a9a9a9);
+            background: linear-gradient(135deg, #c0c0c0, #696969);
+            color: #fff;
+        }
+        body.thunderstorm {
+            background: linear-gradient(135deg, #2f2f2f, #483d8b);
+            color: #fff;
+        }
+        body.windy {
+            background: linear-gradient(135deg, #98fb98, #4682b4);
             color: #333;
         }
-        /* Rain animation */
-        .rain {
+        /* Animations */
+        .particles {
             position: fixed;
             top: 0;
             left: 0;
@@ -72,54 +91,57 @@
             pointer-events: none;
             z-index: -1;
         }
-        .rain .drop {
+        .rain-drop {
             position: absolute;
             width: 2px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.5);
-            animation: fall 1s linear infinite;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.6);
+            animation: fall 1.5s linear infinite;
+        }
+        .snow-flake {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            animation: snowFall 6s linear infinite;
+        }
+        .wind-leaf {
+            position: absolute;
+            width: 8px;
+            height: 4px;
+            background: #98fb98;
+            border-radius: 50%;
+            animation: windBlow 4s linear infinite;
         }
         @keyframes fall {
             0% { transform: translateY(-100vh); }
             100% { transform: translateY(100vh); }
         }
-        /* Snow animation */
-        .snow {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: -1;
-        }
-        .snow .flake {
-            position: absolute;
-            width: 5px;
-            height: 5px;
-            background: #fff;
-            border-radius: 50%;
-            animation: snowFall 5s linear infinite;
-        }
         @keyframes snowFall {
             0% { transform: translateY(-100vh) translateX(0); }
-            100% { transform: translateY(100vh) translateX(20px); }
+            100% { transform: translateY(100vh) translateX(30px); }
+        }
+        @keyframes windBlow {
+            0% { transform: translateX(-100vw) rotate(0deg); }
+            100% { transform: translateX(100vw) rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="weather-card">
         <h1>Montreal Weather</h1>
         <div class="weather-icon" id="weather-icon"></div>
-        <p id="weather-info">Loading...</p>
+        <div class="weather-details" id="weather-info">Loading...</div>
+        <div class="weather-advice" id="weather-advice"></div>
     </div>
-    <div id="animation-container"></div>
+    <div class="particles" id="animation-container"></div>
 
     <script>
-        // Montreal coordinates (latitude, longitude)
+        // Montreal coordinates
         const lat = 45.5088;
         const lon = -73.5878;
-        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weathercode,wind_speed_10m&timezone=America%2FToronto`;
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weathercode,wind_speed_10m,precipitation_probability,cloud_cover&timezone=America%2FToronto`;
 
         async function fetchWeather() {
             try {
@@ -131,18 +153,20 @@
                 updateWeather(data);
             } catch (error) {
                 console.error('Fetch error:', error.message);
-                // Fallback to mock data
+                // Fallback to realistic mock data for Montreal in June
                 const mockData = {
                     current: {
-                        temperature_2m: 20,
-                        relative_humidity_2m: 65,
-                        apparent_temperature: 19,
-                        wind_speed_10m: 10,
-                        weathercode: 0 // Clear sky
+                        temperature_2m: 22,
+                        relative_humidity_2m: 70,
+                        apparent_temperature: 21,
+                        wind_speed_10m: 12,
+                        precipitation_probability: 20,
+                        cloud_cover: 30,
+                        weathercode: 2 // Partly cloudy
                     }
                 };
                 updateWeather(mockData);
-                document.getElementById('weather-info').innerText += '\nUsing mock data due to fetch error.';
+                document.getElementById('weather-info').innerHTML += '<br>Using mock data due to fetch error.';
             }
         }
 
@@ -151,9 +175,12 @@
             const humidity = data.current.relative_humidity_2m;
             const feelsLike = data.current.apparent_temperature;
             const windSpeed = data.current.wind_speed_10m;
+            const precipProbability = data.current.precipitation_probability;
+            const cloudCover = data.current.cloud_cover;
             const weatherCode = data.current.weathercode;
             const { condition, description } = getWeatherCondition(weatherCode);
             const icon = getWeatherIcon(condition);
+            const advice = getWeatherAdvice(condition, precipProbability);
 
             // Update text
             document.getElementById('weather-info').innerHTML = `
@@ -161,16 +188,18 @@
                 Feels Like: ${feelsLike}°C<br>
                 Condition: ${description}<br>
                 Humidity: ${humidity}%<br>
-                Wind Speed: ${windSpeed} km/h
+                Wind Speed: ${windSpeed} km/h<br>
+                Precipitation Chance: ${precipProbability}%<br>
+                Cloud Cover: ${cloudCover}%
             `;
             document.getElementById('weather-icon').innerText = icon;
+            document.getElementById('weather-advice').innerText = advice;
 
             // Update theme and animation
             updateThemeAndAnimation(condition);
         }
 
         function getWeatherCondition(weatherCode) {
-            // Open-Meteo weather codes: https://open-meteo.com/en/docs
             const codes = {
                 0: { condition: 'sunny', description: 'Clear sky' },
                 1: { condition: 'sunny', description: 'Mainly clear' },
@@ -187,8 +216,14 @@
                 71: { condition: 'snowy', description: 'Light snow' },
                 73: { condition: 'snowy', description: 'Moderate snow' },
                 75: { condition: 'snowy', description: 'Heavy snow' },
-                95: { condition: 'rainy', description: 'Thunderstorm' }
+                80: { condition: 'rainy', description: 'Rain showers' },
+                95: { condition: 'thunderstorm', description: 'Thunderstorm' },
+                96: { condition: 'thunderstorm', description: 'Thunderstorm with hail' }
             };
+            // Windy condition based on wind speed (not directly from weathercode)
+            if (data.current.wind_speed_10m > 25) {
+                return { condition: 'windy', description: 'Windy' };
+            }
             return codes[weatherCode] || { condition: 'cloudy', description: 'Unknown' };
         }
 
@@ -199,43 +234,66 @@
                 cloudy: '☁️',
                 rainy: '🌧️',
                 snowy: '❄️',
-                foggy: '🌫️'
+                foggy: '🌫️',
+                thunderstorm: '⛈️',
+                windy: '💨'
             };
             return icons[condition] || '🌍';
         }
 
+        function getWeatherAdvice(condition, precipProbability) {
+            if (condition === 'rainy' || condition === 'thunderstorm' || precipProbability > 50) {
+                return 'Bring an umbrella or raincoat!';
+            } else if (condition === 'snowy') {
+                return 'Dress warmly and watch for slippery surfaces!';
+            } else if (condition === 'sunny') {
+                return 'Perfect day for sunglasses and a walk!';
+            } else if (condition === 'foggy') {
+                return 'Drive carefully due to low visibility!';
+            } else if (condition === 'windy') {
+                return 'Hold onto your hat, it’s breezy!';
+            } else {
+                return 'Enjoy the day in Montreal!';
+            }
+        }
+
         function updateThemeAndAnimation(condition) {
-            document.body.classList.remove('sunny', 'partly-cloudy', 'cloudy', 'rainy', 'snowy', 'foggy');
+            document.body.classList.remove('sunny', 'partly-cloudy', 'cloudy', 'rainy', 'snowy', 'foggy', 'thunderstorm', 'windy');
             document.body.classList.add(condition);
 
             // Clear previous animations
             const animationContainer = document.getElementById('animation-container');
             animationContainer.innerHTML = '';
 
-            // Add animations for rain or snow
-            if (condition === 'rainy') {
-                animationContainer.classList.add('rain');
-                for (let i = 0; i < 50; i++) {
+            // Add animations based on condition
+            if (condition === 'rainy' || condition === 'thunderstorm') {
+                for (let i = 0; i < 60; i++) {
                     const drop = document.createElement('div');
-                    drop.classList.add('drop');
+                    drop.classList.add('rain-drop');
                     drop.style.left = `${Math.random() * 100}%`;
                     drop.style.animationDelay = `${Math.random() * 2}s`;
                     animationContainer.appendChild(drop);
                 }
             } else if (condition === 'snowy') {
-                animationContainer.classList.add('snow');
-                for (let i = 0; i < 30; i++) {
+                for (let i = 0; i < 40; i++) {
                     const flake = document.createElement('div');
-                    flake.classList.add('flake');
+                    flake.classList.add('snow-flake');
                     flake.style.left = `${Math.random() * 100}%`;
-                    flake.style.animationDelay = `${Math.random() * 5}s`;
+                    flake.style.animationDelay = `${Math.random() * 6}s`;
                     animationContainer.appendChild(flake);
+                }
+            } else if (condition === 'windy') {
+                for (let i = 0; i < 20; i++) {
+                    const leaf = document.createElement('div');
+                    leaf.classList.add('wind-leaf');
+                    leaf.style.top = `${Math.random() * 100}%`;
+                    leaf.style.animationDelay = `${Math.random() * 4}s`;
+                    animationContainer.appendChild(leaf);
                 }
             }
         }
 
-        // Fetch real-time weather on load
+        // Fetch real-time weather
         fetchWeather();
     </script>
-</body>
-</html>
+</head>
