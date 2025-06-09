@@ -156,7 +156,7 @@
         // Montreal coordinates
         const lat = 45.5088;
         const lon = -73.5878;
-        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}¤t=temperature_2m,relative_humidity_2m,apparent_temperature,weathercode,wind_speed_10m,precipitation_probability,cloud_cover&timezone=America%2FToronto`;
+        const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weathercode,wind_speed_10m,precipitation_probability,cloud_cover&timezone=America%2FToronto`;
 
         async function fetchWeather() {
             try {
@@ -166,24 +166,15 @@
                 }
                 const data = await response.json();
                 updateWeather(data);
-                // Update last refresh time
                 document.getElementById('weather-info').innerHTML += `<br>Last updated: ${new Date().toLocaleTimeString()}`;
             } catch (error) {
                 console.error('Fetch error:', error.message);
-                // Fallback to mock data
-                const mockData = {
-                    current: {
-                        temperature_2m: 22,
-                        relative_humidity_2m: 70,
-                        apparent_temperature: 21,
-                        wind_speed_10m: 12,
-                        precipitation_probability: 20,
-                        cloud_cover: 30,
-                        weathercode: 2 // Partly cloudy
-                    }
-                };
-                updateWeather(mockData);
-                document.getElementById('weather-info').innerHTML += `<br>Using mock data due to fetch error. Last updated: ${new Date().toLocaleTimeString()}`;
+                document.getElementById('weather-info').innerHTML = `Failed to fetch real-time weather: ${error.message}. Please check your internet connection or try again later.`;
+                document.getElementById('weather-icon').innerText = '🌍';
+                document.getElementById('weather-advice').innerText = 'Unable to load weather data.';
+                document.body.classList.remove('sunny', 'partly-cloudy', 'cloudy', 'rainy', 'snowy', 'foggy', 'thunderstorm', 'windy');
+                document.body.classList.add('cloudy'); // Default theme on error
+                document.getElementById('animation-container').innerHTML = ''; // Clear animations
             }
         }
 
@@ -237,7 +228,6 @@
                 95: { condition: 'thunderstorm', description: 'Thunderstorm' },
                 96: { condition: 'thunderstorm', description: 'Thunderstorm with hail' }
             };
-            // Override with windy if wind speed is high
             if (windSpeed > 25) {
                 return { condition: 'windy', description: 'Windy' };
             }
@@ -278,11 +268,9 @@
             document.body.classList.remove('sunny', 'partly-cloudy', 'cloudy', 'rainy', 'snowy', 'foggy', 'thunderstorm', 'windy');
             document.body.classList.add(condition);
 
-            // Clear previous animations
             const animationContainer = document.getElementById('animation-container');
             animationContainer.innerHTML = '';
 
-            // Add animations
             if (condition === 'rainy' || condition === 'thunderstorm') {
                 for (let i = 0; i < 60; i++) {
                     const drop = document.createElement('div');
@@ -316,4 +304,5 @@
         // Auto-refresh every 10 minutes (600,000 ms)
         setInterval(fetchWeather, 600000);
     </script>
-</head>
+</body>
+</html>
