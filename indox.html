@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Mood</title>
+    <style>
+        :root {
+            --bg-color: #f0f8ff;
+            --text-color: #333;
+            --accent-color: #4682b4;
+            --font-family: 'Segoe UI', sans-serif;
+            --animation: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.5s ease;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            animation: var(--animation);
+        }
+
+        .weather-container {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .weather-icon {
+            font-size: 5rem;
+            margin: 1rem 0;
+        }
+
+        .temperature {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .description {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-transform: capitalize;
+        }
+
+        .location {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        input, button {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            border: 1px solid var(--accent-color);
+            font-family: inherit;
+        }
+
+        input {
+            width: 200px;
+        }
+
+        button {
+            background: var(--accent-color);
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Weather Mood Themes */
+        .sunny {
+            --bg-color: #fffacd;
+            --text-color: #d2691e;
+            --accent-color: #ff8c00;
+            --animation: sunshine 5s infinite alternate;
+        }
+
+        .rainy {
+            --bg-color: #e6e6fa;
+            --text-color: #191970;
+            --accent-color: #4682b4;
+            --animation: raindrops 3s linear infinite;
+        }
+
+        .cloudy {
+            --bg-color: #d3d3d3;
+            --text-color: #696969;
+            --accent-color: #778899;
+            --animation: clouds-moving 20s linear infinite;
+        }
+
+        .stormy {
+            --bg-color: #1a1a2e;
+            --text-color: #e6e6e6;
+            --accent-color: #4cc9f0;
+            --animation: lightning 15s infinite;
+        }
+
+        .snowy {
+            --bg-color: #f0f8ff;
+            --text-color: #4682b4;
+            --accent-color: #b0e0e6;
+            --animation: snowfall 10s linear infinite;
+        }
+
+        /* Animations */
+        @keyframes sunshine {
+            from { background-color: #fffacd; }
+            to { background-color: #ffe4b5; }
+        }
+
+        @keyframes raindrops {
+            background-position: 0% 0%;
+            to { background-position: 0% 100%; }
+        }
+
+        @keyframes clouds-moving {
+            from { background-position: 0 0; }
+            to { background-position: 100% 0; }
+        }
+
+        @keyframes lightning {
+            0% { background-color: #1a1a2e; }
+            1% { background-color: #4cc9f0; }
+            2% { background-color: #1a1a2e; }
+            8% { background-color: #1a1a2e; }
+            9% { background-color: #4cc9f0; }
+            10% { background-color: #1a1a2e; }
+            100% { background-color: #1a1a2e; }
+        }
+
+        @keyframes snowfall {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100vh; }
+        }
+
+        /* Dynamic background elements */
+        .rain-bg, .snow-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        .rain-bg {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 10"><path d="M1 0v10" stroke="%234682b4" stroke-width="0.2"/></svg>');
+            animation: raindrops 1s linear infinite;
+        }
+
+        .snow-bg {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="3" fill="%23b0e0e6"/></svg>');
+            background-size: 20px 20px;
+            animation: snowfall 10s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="weather-container">
+        <h1>Weather Mood</h1>
+        <div class="location">
+            <input type="text" id="location-input" placeholder="Enter city name">
+            <button id="search-btn">Search</button>
+        </div>
+        <div class="weather-icon" id="weather-icon">⛅</div>
+        <div class="temperature" id="temperature">--°C</div>
+        <div class="description" id="description">Enter a location</div>
+    </div>
+
+    <div id="dynamic-bg"></div>
+
+    <script>
+        // Weather mood themes
+        const weatherThemes = {
+            'clear': {
+                class: 'sunny',
+                icon: '☀️',
+                bg: ''
+            },
+            'rain': {
+                class: 'rainy',
+                icon: '🌧️',
+                bg: '<div class="rain-bg"></div>'
+            },
+            'clouds': {
+                class: 'cloudy',
+                icon: '☁️',
+                bg: ''
+            },
+            'thunderstorm': {
+                class: 'stormy',
+                icon: '⛈️',
+                bg: ''
+            },
+            'snow': {
+                class: 'snowy',
+                icon: '❄️',
+                bg: '<div class="snow-bg"></div>'
+            },
+            'default': {
+                class: '',
+                icon: '🌎',
+                bg: ''
+            }
+        };
+
+        // DOM elements
+        const body = document.body;
+        const weatherIcon = document.getElementById('weather-icon');
+        const temperature = document.getElementById('temperature');
+        const description = document.getElementById('description');
+        const locationInput = document.getElementById('location-input');
+        const searchBtn = document.getElementById('search-btn');
+        const dynamicBg = document.getElementById('dynamic-bg');
+
+        // OpenWeatherMap API key (replace with your own)
+        const apiKey = 'YOUR_API_KEY_HERE';
+
+        // Fetch weather data
+        async function getWeather(city) {
+            try {
+                const response = await fetch(
+                    `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`
+                );
+                const data = await response.json();
+                
+                if (data.cod === 200) {
+                    updateWeather(data);
+                } else {
+                    alert('Location not found. Try another city.');
+                }
+            } catch (error) {
+                console.error('Error fetching weather:', error);
+                alert('Error fetching weather data. Please try again.');
+            }
+        }
+
+        // Update UI with weather data
+        function updateWeather(data) {
+            const weather = data.weather[0].main.toLowerCase();
+            const temp = Math.round(data.main.temp);
+            const desc = data.weather[0].description;
+            const city = data.name;
+            
+            // Apply weather theme
+            const theme = weatherThemes[weather] || weatherThemes.default;
+            
+            // Reset classes
+            body.className = '';
+            dynamicBg.innerHTML = '';
+            
+            // Apply new theme
+            body.classList.add(theme.class);
+            dynamicBg.innerHTML = theme.bg;
+            
+            // Update weather info
+            weatherIcon.textContent = theme.icon;
+            temperature.textContent = `${temp}°C`;
+            description.textContent = `${desc} in ${city}`;
+        }
+
+        // Event listeners
+        searchBtn.addEventListener('click', () => {
+            const city = locationInput.value.trim();
+            if (city) {
+                getWeather(city);
+            }
+        });
+
+        locationInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const city = locationInput.value.trim();
+                if (city) {
+                    getWeather(city);
+                }
+            }
+        });
+
+        // Get user's location weather on startup (optional)
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    fetch(
+                        `https://api.openweathermap.org/data/2.5/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}&units=metric&appid=${apiKey}`
+                    )
+                    .then(response => response.json())
+                    .then(data => updateWeather(data));
+                },
+                (error) => {
+                    console.log('Geolocation error:', error);
+                    // Default to a nice location
+                    getWeather('Paris');
+                }
+            );
+        } else {
+            getWeather('Paris');
+        }
+    </script>
+</body>
+</html>
